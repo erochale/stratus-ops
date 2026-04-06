@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratus Aviation — Document Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --obsidian:#0F0F0F;
+  --silver:#C0C7D0;
+  --silver-light:#E2E5EA;
+  --slate:#4A5568;
+  --sky:#F7F8FA;
+  --white:#FFFFFF;
+  --rule:#E0E3E8;
+  --muted:#888888;
+  --panel:#FAFBFC;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:#101010;color:var(--obsidian);-webkit-font-smoothing:antialiased;}
+
+/* ═══════════════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════════════ */
+.app-shell{min-height:100vh;display:grid;grid-template-columns:390px 1fr;grid-template-rows:52px 1fr;}
+
+/* TOP BAR */
+.app-topbar{grid-column:1/-1;background:var(--obsidian);display:flex;justify-content:space-between;align-items:center;padding:0 28px;border-bottom:1px solid #1e1e1e;position:sticky;top:0;z-index:100;}
+.topbar-brand{display:flex;align-items:center;gap:14px;}
+.topbar-mark{display:flex;flex-direction:column;gap:4px;}
+.topbar-mark span{display:block;height:1.5px;background:var(--silver);}
+.topbar-mark span:nth-child(1){width:24px;}
+.topbar-mark span:nth-child(2){width:17px;}
+.topbar-mark span:nth-child(3){width:10px;}
+.topbar-name{font-size:10px;font-weight:600;letter-spacing:.24em;color:var(--sky);}
+.topbar-sub{font-size:7.5px;letter-spacing:.18em;color:#444;margin-top:2px;}
+.mode-switcher{display:flex;}
+.mode-btn{font-family:'DM Sans',sans-serif;font-size:8.5px;font-weight:500;letter-spacing:.2em;padding:8px 20px;border:none;background:transparent;color:#555;cursor:pointer;transition:all .15s;border-right:.5px solid #222;}
+.mode-btn:last-child{border-right:none;}
+.mode-btn:hover{color:#888;}
+.mode-btn.active-inv{background:var(--silver);color:var(--obsidian);font-weight:600;}
+.mode-btn.active-est{background:var(--slate);color:var(--sky);font-weight:600;}
+
+/* FORM PANEL */
+.form-panel{background:#141414;padding:24px 22px 60px;overflow-y:auto;border-right:1px solid #1e1e1e;}
+.form-section{font-size:7.5px;font-weight:600;letter-spacing:.26em;color:#3a3a3a;padding-bottom:8px;border-bottom:.5px solid #222;margin-top:22px;margin-bottom:14px;}
+.form-section:first-child{margin-top:0;}
+.form-group{margin-bottom:12px;}
+label{display:block;font-size:8px;letter-spacing:.18em;color:#555;margin-bottom:5px;font-weight:500;}
+input[type="text"],input[type="date"],textarea,select{width:100%;background:#1c1c1c;border:.5px solid #2a2a2a;color:var(--sky);font-family:'DM Sans',sans-serif;font-size:12.5px;padding:9px 11px;outline:none;border-radius:0;transition:border-color .14s;-webkit-appearance:none;}
+input:focus,textarea:focus,select:focus{border-color:#4A5568;}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.35);cursor:pointer;}
+select option{background:#1c1c1c;}
+textarea{resize:vertical;min-height:68px;line-height:1.55;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.docnum-row{display:flex;align-items:center;background:#1c1c1c;border:.5px solid #2a2a2a;padding:9px 11px;gap:8px;}
+.docnum-val{flex:1;font-family:'DM Mono',monospace;font-size:13px;color:var(--silver);letter-spacing:.08em;}
+.docnum-regen{font-size:8px;letter-spacing:.14em;color:#444;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:color .12s;padding:0;}
+.docnum-regen:hover{color:var(--silver);}
+.price-summary{background:#1a1a1a;border:.5px solid #252525;padding:12px 14px;margin-top:2px;}
+.ps-row{display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:6px;}
+.ps-row.ps-total{color:var(--sky);font-weight:600;font-size:13px;border-top:.5px solid #2a2a2a;padding-top:8px;margin-top:4px;margin-bottom:6px;}
+.ps-row.ps-dep{color:var(--silver);}
+.ps-row.ps-bal{color:#444;font-size:11px;}
+.action-row{margin-top:22px;display:flex;gap:8px;}
+.btn-print{flex:1;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:.22em;padding:12px;background:var(--silver);color:var(--obsidian);border:none;cursor:pointer;transition:background .14s;}
+.btn-print:hover{background:#D4DAE2;}
+.btn-reset{font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.16em;padding:12px 14px;background:transparent;color:#444;border:.5px solid #2a2a2a;cursor:pointer;transition:all .14s;}
+.btn-reset:hover{color:#888;border-color:#444;}
+
+/* PREVIEW PANEL */
+.preview-panel{background:#181818;display:flex;align-items:flex-start;justify-content:center;padding:36px 28px 60px;overflow-y:auto;}
+
+/* ═══════════════════════════════════════════════════════
+   INVOICE DOCUMENT
+═══════════════════════════════════════════════════════ */
+.invoice-doc{background:var(--white);width:100%;max-width:640px;position:relative;overflow:hidden;box-shadow:0 0 0 .5px rgba(255,255,255,.06),0 20px 80px rgba(0,0,0,.55);display:flex;flex-direction:column;min-height:820px;}
+
+/* Watermark */
+.doc-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-28deg);font-size:72px;font-weight:700;letter-spacing:.18em;color:rgba(0,0,0,.035);pointer-events:none;white-space:nowrap;font-family:'DM Sans',sans-serif;z-index:0;user-select:none;}
+
+/* ZONE A: HEADER */
+.doc-header{background:var(--obsidian);padding:26px 40px 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0;position:relative;z-index:1;}
+.doc-brand-name{font-size:15px;font-weight:600;letter-spacing:.24em;color:var(--sky);}
+.doc-brand-sub{font-size:7.5px;letter-spacing:.2em;color:#2e2e2e;margin-top:5px;}
+.doc-hdr-right{text-align:right;}
+.doc-mode-badge{display:inline-block;font-size:7px;font-weight:600;letter-spacing:.24em;padding:4px 10px;margin-bottom:7px;transition:all .2s;}
+.doc-mode-badge.invoice{background:var(--silver);color:var(--obsidian);}
+.doc-mode-badge.estimate{background:transparent;border:.5px solid var(--slate);color:var(--silver);}
+.doc-number{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--sky);letter-spacing:.1em;}
+.doc-silver-rule{height:1.5px;background:linear-gradient(90deg,var(--silver) 0%,var(--slate) 55%,transparent 100%);flex-shrink:0;}
+
+/* ZONE B: BODY */
+.doc-body{padding:30px 40px 24px;flex:1;display:flex;flex-direction:column;gap:22px;position:relative;z-index:1;}
+.doc-guest-row{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:.5px solid var(--rule);}
+.doc-field-lbl{font-size:7.5px;letter-spacing:.22em;color:var(--muted);margin-bottom:6px;font-weight:500;}
+.doc-guest-name{font-family:'Playfair Display',serif;font-size:26px;color:var(--obsidian);font-weight:400;line-height:1.1;}
+.doc-zone-badge{display:inline-block;font-size:7.5px;letter-spacing:.18em;padding:3px 10px;background:var(--sky);border:.5px solid var(--rule);color:var(--slate);margin-top:9px;font-weight:500;}
+.doc-meta-right{text-align:right;}
+.doc-meta-val{font-size:13px;font-weight:500;color:var(--obsidian);}
+.doc-meta-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.doc-section-lbl{font-size:7.5px;letter-spacing:.24em;color:var(--muted);margin-bottom:8px;font-weight:500;}
+.doc-mission-panel{background:var(--sky);border:.5px solid var(--rule);padding:16px 18px;}
+.doc-mission-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
+.doc-mission-name{font-size:14px;font-weight:600;color:var(--obsidian);letter-spacing:.01em;line-height:1.25;}
+.doc-mission-meta{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.6;}
+.doc-mission-price{font-family:'DM Mono',monospace;font-size:22px;font-weight:400;color:var(--obsidian);white-space:nowrap;flex-shrink:0;}
+.doc-financials{background:var(--panel);border:.5px solid var(--rule);padding:16px 20px;}
+.doc-fin-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--slate);margin-bottom:8px;}
+.doc-fin-row.struck{text-decoration:line-through;color:#ccc;}
+.doc-fin-total{display:flex;justify-content:space-between;font-size:13.5px;font-weight:600;color:var(--obsidian);border-top:.5px solid var(--silver);padding-top:10px;margin-top:2px;}
+.doc-fin-inset{margin-top:12px;background:var(--obsidian);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+.doc-fin-inset-lbl{font-size:8px;letter-spacing:.2em;color:var(--silver);font-weight:500;}
+.doc-fin-inset-val{font-family:'DM Mono',monospace;font-size:20px;color:var(--sky);letter-spacing:.04em;}
+.doc-est-note{margin-top:10px;padding:10px 14px;background:#F0F3F7;border-left:2px solid var(--silver);font-size:10.5px;color:var(--slate);line-height:1.7;font-style:italic;}
+.doc-notes{border-left:2px solid var(--silver-light);padding:10px 16px;background:var(--white);}
+.doc-notes-text{font-size:11px;color:var(--slate);line-height:1.7;font-style:italic;}
+
+/* ZONE C: FOOTER */
+.doc-footer{border-top:.5px solid var(--rule);padding:18px 40px 20px;flex-shrink:0;position:relative;z-index:1;}
+.doc-sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:18px;}
+.doc-sig{padding-top:28px;border-top:.5px solid var(--obsidian);}
+.doc-sig-lbl{font-size:7.5px;letter-spacing:.18em;color:#bbb;}
+.doc-legal{display:flex;justify-content:space-between;padding-top:12px;border-top:.5px solid var(--rule);}
+.doc-legal-txt{font-size:7px;letter-spacing:.16em;color:#ccc;}
+
+/* ═══════════════════════════════════════════════════════
+   PRINT — LETTER 8.5" × 11"
+═══════════════════════════════════════════════════════ */
+@media print{
+  @page{size:letter;margin:0;}
+  html,body{background:white;width:8.5in;height:11in;overflow:hidden;}
+  .app-topbar,.form-panel{display:none!important;}
+  .app-shell{display:block;width:100%;height:100%;}
+  .preview-panel{display:block;background:white;padding:0;width:100%;height:100%;overflow:hidden;}
+  .invoice-doc{width:8.5in;height:11in;max-width:100%;min-height:unset;box-shadow:none;overflow:hidden;}
+  .doc-header{padding:.45in .6in .35in;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .doc-brand-name{font-size:16pt;}
+  .doc-brand-sub{font-size:7.5pt;}
+  .doc-mode-badge{font-size:7pt;padding:4px 10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .doc-number{font-size:10pt;}
+  .doc-body{padding:.35in .6in .2in;flex:1;gap:.18in;}
+  .doc-guest-name{font-size:26pt;}
+  .doc-mission-name{font-size:13pt;}
+  .doc-mission-meta{font-size:9pt;}
+  .doc-mission-price{font-size:20pt;}
+  .doc-fin-row{font-size:10.5pt;}
+  .doc-fin-total{font-size:12.5pt;}
+  .doc-fin-inset{-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:10px 16px;}
+  .doc-fin-inset-val{font-size:18pt;}
+  .doc-est-note{font-size:9.5pt;}
+  .doc-notes-text{font-size:10pt;}
+  .doc-wm{-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:80pt;}
+  .doc-footer{padding:.16in .6in .22in;}
+  .doc-sigs{gap:.5in;margin-bottom:.16in;}
+  .doc-sig{padding-top:.28in;}
+  .doc-sig-lbl{font-size:7.5pt;}
+  .doc-legal-txt{font-size:7pt;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<!-- TOP BAR -->
+<header class="app-topbar">
+  <div class="topbar-brand">
+    <div class="topbar-mark"><span></span><span></span><span></span></div>
+    <div>
+      <div class="topbar-name">STRATUS AVIATION</div>
+      <div class="topbar-sub">DOCUMENT GENERATOR · CONFIDENTIAL</div>
+    </div>
+  </div>
+  <div class="mode-switcher">
+    <button class="mode-btn active-inv" id="modeBtnInv" onclick="setMode('invoice')">⬤&ensp;INVOICE MODE</button>
+    <button class="mode-btn" id="modeBtnEst" onclick="setMode('estimate')">◯&ensp;ESTIMATE MODE</button>
+  </div>
+</header>
+
+<!-- FORM PANEL -->
+<aside class="form-panel">
+
+  <div class="form-section">DOCUMENT SETTINGS</div>
+
+  <div class="form-group">
+    <label>DOCUMENT NUMBER</label>
+    <div class="docnum-row">
+      <span class="docnum-val" id="docNumDisplay">SA-2026-0001</span>
+      <button class="docnum-regen" onclick="generateDocNumber()">↻ REGENERATE</button>
+    </div>
+  </div>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label>FLIGHT DATE</label>
+      <input type="date" id="flightDate" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label>ISSUE DATE</label>
+      <input type="date" id="issueDate" oninput="updatePreview()">
+    </div>
+  </div>
+
+  <div class="form-section">GUEST INFORMATION</div>
+
+  <div class="form-group">
+    <label>GUEST FULL NAME</label>
+    <input type="text" id="guestName" placeholder="Full name" oninput="updatePreview()">
+  </div>
+
+  <div class="form-section">EXPERIENCE SELECTION</div>
+
+  <div class="form-group">
+    <label>MISSION</label>
+    <select id="mission" onchange="onMissionChange()">
+      <optgroup label="── KBRO · BROWNSVILLE COASTAL ──">
+        <option value="SX-01">SX-01 — The Graveyard &amp; The Staircase</option>
+        <option value="SX-02">SX-02 — The Starbase Recon (Flagship)</option>
+        <option value="SX-03">SX-03 — The Full Frontier</option>
+        <option value="SX-04">SX-04 — The Border &amp; The Bay</option>
+        <option value="SX-LAUNCH">SX-LAUNCH — Starbase Observation</option>
+      </optgroup>
+      <optgroup label="── KMFE · McALLEN INLAND ──">
+        <option value="MFE-01">MFE-01 — McAllen After Dark</option>
+        <option value="MFE-02">MFE-02 — The Valley Panorama</option>
+        <option value="MFE-03">MFE-03 — The Sunset Session (Exclusive)</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <div class="form-group" id="zoneGroup">
+    <label>SEATING CONFIGURATION</label>
+    <select id="zone" onchange="updatePreview()">
+      <option value="sovereign">Sovereign — Private (1 pax)</option>
+      <option value="cmd">Command Deck — Shared (2 pax)</option>
+      <option value="founders">Founders Table — Shared (3 pax)</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>PRICING SUMMARY</label>
+    <div class="price-summary">
+      <div class="ps-row"><span>Experience Rate</span><span id="ps-rate">—</span></div>
+      <div class="ps-row ps-total"><span>TOTAL</span><span id="ps-total">—</span></div>
+      <div class="ps-row ps-dep" id="ps-dep-row"><span id="ps-dep-lbl">Deposit Required</span><span id="ps-dep-val">—</span></div>
+      <div class="ps-row ps-bal" id="ps-bal-row"><span>Remaining Balance</span><span id="ps-bal-val">—</span></div>
+    </div>
+  </div>
+
+  <div class="form-section">ADDITIONAL DETAILS</div>
+
+  <div class="form-group">
+    <label>CAPTAIN'S NOTES <span style="color:#333;font-size:7.5px;">(OPTIONAL)</span></label>
+    <textarea id="notes" placeholder="Aircraft confirmation, departure window, special requests…" oninput="updatePreview()"></textarea>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-print" onclick="window.print()">⎙&ensp;PRINT · SAVE AS PDF</button>
+    <button class="btn-reset" onclick="resetForm()">RESET</button>
+  </div>
+
+</aside>
+
+<!-- PREVIEW PANEL -->
+<main class="preview-panel">
+  <div class="invoice-doc" id="invoiceDoc">
+
+    <div class="doc-wm" id="docWm">CONFIRMED</div>
+
+    <!-- ZONE A: HEADER -->
+    <div class="doc-header">
+      <div>
+        <div class="doc-brand-name">STRATUS AVIATION</div>
+        <div class="doc-brand-sub">KMFE · KBRO · FAA PART 91.147</div>
+      </div>
+      <div class="doc-hdr-right">
+        <div><span class="doc-mode-badge invoice" id="docModeBadge">AERIAL EXPERIENCE INVOICE</span></div>
+        <div class="doc-number" id="docNumPreview">SA-2026-0001</div>
+      </div>
+    </div>
+    <div class="doc-silver-rule"></div>
+
+    <!-- ZONE B: BODY -->
+    <div class="doc-body">
+
+      <div class="doc-guest-row">
+        <div>
+          <div class="doc-field-lbl">GUEST</div>
+          <div class="doc-guest-name" id="pv-guestName">Guest Name</div>
+          <div class="doc-zone-badge" id="pv-zoneBadge">—</div>
+        </div>
+        <div class="doc-meta-right">
+          <div class="doc-field-lbl" style="text-align:right;">FLIGHT DATE</div>
+          <div class="doc-meta-val" id="pv-flightDate">—</div>
+          <div class="doc-meta-sub">Issued: <span id="pv-issueDate">—</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="doc-section-lbl">SELECTED EXPERIENCE</div>
+        <div class="doc-mission-panel">
+          <div class="doc-mission-inner">
+            <div>
+              <div class="doc-mission-name" id="pv-missionName">—</div>
+              <div class="doc-mission-meta" id="pv-missionMeta">—</div>
+            </div>
+            <div class="doc-mission-price" id="pv-missionPrice">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-financials">
+        <div class="doc-fin-row"><span>Experience Rate</span><span id="pv-rate">—</span></div>
+        <div class="doc-fin-row" id="pv-depRow"><span id="pv-depLabel">—</span><span id="pv-depVal">—</span></div>
+        <div class="doc-fin-total"><span>TOTAL</span><span id="pv-total">—</span></div>
+        <div class="doc-fin-inset">
+          <span class="doc-fin-inset-lbl" id="pv-insetLbl">REMAINING BALANCE DUE AT FBO</span>
+          <span class="doc-fin-inset-val" id="pv-insetVal">—</span>
+        </div>
+        <div class="doc-est-note" id="pv-estNote" style="display:none;"></div>
+      </div>
+
+      <div class="doc-notes" id="pv-notesBlock" style="display:none;">
+        <div class="doc-field-lbl" style="margin-bottom:5px;">CAPTAIN'S NOTES</div>
+        <div class="doc-notes-text" id="pv-notesText"></div>
+      </div>
+
+    </div>
+
+    <!-- ZONE C: FOOTER -->
+    <div class="doc-footer">
+      <div class="doc-sigs">
+        <div class="doc-sig"><div class="doc-sig-lbl">AUTHORIZED BY · STRATUS AVIATION</div></div>
+        <div class="doc-sig"><div class="doc-sig-lbl">GUEST ACKNOWLEDGMENT</div></div>
+      </div>
+      <div class="doc-legal">
+        <div class="doc-legal-txt">STRATUS AVIATION · ABOVE EVERYTHING</div>
+        <div class="doc-legal-txt">FAA PART 91.147 · KMFE / KBRO · CONFIDENTIAL &amp; PROPRIETARY</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+</div>
+
+<script>
+/* ── CATALOG ── */
+const CATALOG={
+  'SX-01':{display:'SX-01 — The Graveyard & The Staircase',meta:'~30 min · Surreal contrast: ship graveyard to Starbase · KBRO Gateway',sovereign:349,cmd:149,founders:249,launch:false},
+  'SX-02':{display:'SX-02 — The Starbase Recon',meta:'~45 min · SpaceX flagship · Double orbits + Wing-Dip photo pass · KBRO Gateway',sovereign:449,cmd:199,founders:319,launch:false},
+  'SX-03':{display:'SX-03 — The Full Frontier',meta:'~60 min · Full coastline + wildlife refuge · Premium flagship · KBRO Gateway',sovereign:589,cmd:259,founders:419,launch:false},
+  'SX-04':{display:'SX-04 — The Border & The Bay',meta:'~30 min · US/Mexico border to sea · Insider coastal route · KBRO Gateway',sovereign:349,cmd:149,founders:249,launch:false},
+  'SX-LAUNCH':{display:'SX-LAUNCH — Starbase Observation',meta:'~60 min · Launch window timed · Gateway to Mars aerial mission · KBRO Gateway\n50% non-refundable deposit required to confirm launch window slot',sovereign:749,cmd:399,founders:null,launch:true},
+  'MFE-01':{display:'MFE-01 — McAllen After Dark',meta:'~45 min · Night city lights experience + curated SX Soundscape · KMFE Gateway',sovereign:329,cmd:139,founders:239,launch:false},
+  'MFE-02':{display:'MFE-02 — The Valley Panorama',meta:'~45 min · Daytime Story of the Valley route · KMFE Gateway',sovereign:329,cmd:139,founders:239,launch:false},
+  'MFE-03':{display:'MFE-03 — The Sunset Session',meta:'~60 min · Golden Hour exclusive · One slot per Friday only · KMFE Gateway',sovereign:469,cmd:209,founders:339,launch:false}
+};
+
+const ZONE_BADGE={
+  sovereign:'SOVEREIGN · PRIVATE · 1 PAX',
+  cmd:'COMMAND DECK · SHARED · 2 PAX',
+  founders:'FOUNDERS TABLE · SHARED · 3 PAX'
+};
+
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let currentMode='invoice';
+let docCounter=1;
+
+function fmt(n){return '$'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function el(id){return document.getElementById(id);}
+function fmtDate(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${MONTHS[+m-1]} ${+d}, ${y}`;}
+
+function generateDocNumber(){
+  const yr=new Date().getFullYear();
+  const n=String(docCounter++).padStart(4,'0');
+  const code=`SA-${yr}-${n}`;
+  el('docNumDisplay').textContent=code;
+  el('docNumPreview').textContent=code;
+}
+
+function setMode(mode){
+  currentMode=mode;
+  el('modeBtnInv').className=mode==='invoice'?'mode-btn active-inv':'mode-btn';
+  el('modeBtnEst').className=mode==='estimate'?'mode-btn active-est':'mode-btn';
+  const badge=el('docModeBadge');
+  if(mode==='invoice'){
+    badge.textContent='AERIAL EXPERIENCE INVOICE';
+    badge.className='doc-mode-badge invoice';
+    el('docWm').textContent='CONFIRMED';
+  }else{
+    badge.textContent='AERIAL EXPERIENCE ESTIMATE';
+    badge.className='doc-mode-badge estimate';
+    el('docWm').textContent='ESTIMATE';
+  }
+  updatePreview();
+}
+
+function onMissionChange(){
+  const m=CATALOG[el('mission').value];
+  const zSel=el('zone');
+  const cur=zSel.value;
+  if(m.launch){
+    zSel.innerHTML=`<option value="sovereign">Sovereign — Private (1 pax)</option><option value="cmd">Shared — 2 pax</option>`;
+    zSel.value=cur==='founders'?'sovereign':cur;
+  }else{
+    zSel.innerHTML=`<option value="sovereign">Sovereign — Private (1 pax)</option><option value="cmd">Command Deck — Shared (2 pax)</option><option value="founders">Founders Table — Shared (3 pax)</option>`;
+    if(['sovereign','cmd','founders'].includes(cur))zSel.value=cur;
+  }
+  updatePreview();
+}
+
+function updatePreview(){
+  const mKey=el('mission').value;
+  const m=CATALOG[mKey];
+  const zone=el('zone').value;
+  const price=m[zone]||0;
+  const depPct=m.launch?0.5:0.2;
+  const dep=price*depPct;
+  const bal=price-dep;
+  const depLbl=m.launch?'50% Non-Refundable Deposit':'20% Commitment Deposit';
+
+  /* sidebar summary */
+  el('ps-rate').textContent=fmt(price);
+  el('ps-total').textContent=fmt(price);
+  el('ps-dep-val').textContent=fmt(dep);
+  el('ps-bal-val').textContent=fmt(bal);
+
+  /* guest */
+  const gName=el('guestName').value.trim();
+  el('pv-guestName').textContent=gName||'Guest Name';
+
+  /* zone badge */
+  el('pv-zoneBadge').textContent=(m.launch&&zone==='cmd')?'SHARED · 2 PAX':ZONE_BADGE[zone]||'—';
+
+  /* dates */
+  el('pv-flightDate').textContent=fmtDate(el('flightDate').value);
+  el('pv-issueDate').textContent=fmtDate(el('issueDate').value);
+
+  /* mission */
+  el('pv-missionName').textContent=m.display;
+  el('pv-missionMeta').textContent=m.meta;
+  el('pv-missionPrice').textContent=fmt(price);
+  el('pv-rate').textContent=fmt(price);
+  el('pv-total').textContent=fmt(price);
+
+  /* financials by mode */
+  const depRow=el('pv-depRow');
+  const estNote=el('pv-estNote');
+
+  if(currentMode==='invoice'){
+    depRow.className='doc-fin-row struck';
+    depRow.style.display='flex';
+    el('pv-depLabel').textContent=depLbl+' (Paid)';
+    el('pv-depVal').textContent='− '+fmt(dep);
+    el('pv-insetLbl').textContent='REMAINING BALANCE DUE AT FBO';
+    el('pv-insetVal').textContent=fmt(bal);
+    estNote.style.display='none';
+    el('ps-dep-lbl').textContent=depLbl+' (Paid)';
+    el('ps-dep-row').style.display='flex';
+    el('ps-bal-row').style.display='flex';
+  }else{
+    depRow.style.display='none';
+    el('pv-insetLbl').textContent='DEPOSIT REQUIRED TO CONFIRM';
+    el('pv-insetVal').textContent=fmt(dep);
+    estNote.style.display='block';
+    estNote.innerHTML=`This estimate is not a confirmed reservation. A ${m.launch?'50% non-refundable':'20% commitment'} deposit of <strong>${fmt(dep)}</strong> is required to secure your flight date and aircraft.`;
+    el('ps-dep-lbl').textContent=depLbl+' Required';
+    el('ps-dep-row').style.display='flex';
+    el('ps-bal-row').style.display='none';
+  }
+
+  /* notes */
+  const txt=el('notes').value.trim();
+  el('pv-notesBlock').style.display=txt?'block':'none';
+  el('pv-notesText').textContent=txt;
+}
+
+function resetForm(){
+  el('guestName').value='';
+  el('flightDate').value='';
+  el('issueDate').value=new Date().toISOString().split('T')[0];
+  el('mission').value='SX-01';
+  el('notes').value='';
+  onMissionChange();
+  generateDocNumber();
+}
+
+/* INIT */
+(function(){
+  el('issueDate').value=new Date().toISOString().split('T')[0];
+  generateDocNumber();
+  onMissionChange();
+})();
+</script>
+</body>
+</html>
